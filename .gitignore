@@ -1,0 +1,16 @@
+# Compilation files and binaries
+*.o
+*.a
+*.so
+*.out
+bin/
+build/
+
+# Temporary files and logs
+*.tmp
+*.log
+
+# System files and IDEs
+.DS_Store
+.vscode/
+.idea/
