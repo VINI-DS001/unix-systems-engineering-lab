@@ -37,6 +37,14 @@ static void parse_single_command(char *cmd_str, command_t *cmd) {
 
 void parse_pipeline(char *line, pipeline_t *pipe_cmd) {
     pipe_cmd->num_cmds = 0;
+    pipe_cmd->background = 0;
+
+    /* Check and remove '&' if present at the end of the line */
+    char *bg_ptr = strchr(line, '&');
+    if (bg_ptr != NULL) {
+        pipe_cmd->background = 1;
+        *bg_ptr = '\0'; /* Remove '&' so it doesn't interfere with the tokenizer */
+    }
 
     char *cmd_strs[MAX_COMMANDS];
     char *token = strtok(line, "|");

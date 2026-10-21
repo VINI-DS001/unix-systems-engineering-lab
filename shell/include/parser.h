@@ -15,6 +15,7 @@ typedef struct {
 typedef struct {
     command_t cmds[MAX_COMMANDS];
     int num_cmds;
+    int background; /* 1 if the command ends with '&', 0 otherwise */
 } pipeline_t;
 
 /* Parses the line and populates the pipeline structure */

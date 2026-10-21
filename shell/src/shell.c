@@ -3,11 +3,26 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "../include/shell.h"
 #include "../include/builtins.h"
 #include "../include/parser.h"
+
+/* Signal handler for SIGCHLD: reap terminated children to avoid zombies */
+static void handle_sigchld(int sig) {
+    (void)sig;
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+}
+
+/* Signal handler for SIGINT (Ctrl+C) when the shell is idle at the prompt */
+static void handle_sigint(int sig) {
+    (void)sig;
+    if (isatty(STDIN_FILENO)) {
+        write(STDOUT_FILENO, "\nminishell> ", 12);
+    }
+}
 
 static void setup_redirections(command_t *cmd) {
     if (cmd->input_file != NULL) {
@@ -36,8 +51,8 @@ static void setup_redirections(command_t *cmd) {
 int exec_pipeline(pipeline_t *pipe_cmd) {
     int num_cmds = pipe_cmd->num_cmds;
     int pipefds[2 * (num_cmds - 1)];
+    pid_t last_pid = 0;
 
-    /* Create all necessary pipes */
     for (int i = 0; i < num_cmds - 1; i++) {
         if (pipe(pipefds + i * 2) < 0) {
             perror("minishell: error creating pipe");
@@ -45,31 +60,36 @@ int exec_pipeline(pipeline_t *pipe_cmd) {
         }
     }
 
+    /* Ignore SIGINT in the parent shell during child execution */
+    struct sigaction sa_ignore, sa_old;
+    sa_ignore.sa_handler = SIG_IGN;
+    sigemptyset(&sa_ignore.sa_mask);
+    sa_ignore.sa_flags = 0;
+    sigaction(SIGINT, &sa_ignore, &sa_old);
+
     for (int i = 0; i < num_cmds; i++) {
         pid_t pid = fork();
 
         if (pid < 0) {
             perror("minishell: fork error");
+            /* Restore previous SIGINT handler in case of error */
+            sigaction(SIGINT, &sa_old, NULL);
             return -1;
         } else if (pid == 0) {
-            /* Child Process i */
+            /* In the child process, restore default SIGINT action (SIG_DFL) */
+            signal(SIGINT, SIG_DFL);
 
-            /* If not the first command, connect input to the previous pipe */
             if (i != 0) {
                 dup2(pipefds[(i - 1) * 2], STDIN_FILENO);
             }
-
-            /* If not the last command, connect output to the next pipe */
             if (i != num_cmds - 1) {
                 dup2(pipefds[i * 2 + 1], STDOUT_FILENO);
             }
 
-            /* Close all pipe descriptors in the child */
             for (int j = 0; j < 2 * (num_cmds - 1); j++) {
                 close(pipefds[j]);
             }
 
-            /* Apply file redirections (<, >, >>) if any */
             setup_redirections(&pipe_cmd->cmds[i]);
 
             if (execvp(pipe_cmd->cmds[i].args[0], pipe_cmd->cmds[i].args) == -1) {
@@ -77,16 +97,29 @@ int exec_pipeline(pipeline_t *pipe_cmd) {
             }
             exit(EXIT_FAILURE);
         }
+        last_pid = pid;
     }
 
-    /* Parent Process: close all pipes and wait for children */
     for (int i = 0; i < 2 * (num_cmds - 1); i++) {
         close(pipefds[i]);
     }
 
-    for (int i = 0; i < num_cmds; i++) {
-        wait(NULL);
+    /* If the command is NOT in the background, wait for processes to finish */
+    if (!pipe_cmd->background) {
+        for (int i = 0; i < num_cmds; i++) {
+            int status;
+            wait(&status);
+
+            if (WIFSIGNALED(status) && isatty(STDIN_FILENO)) {
+                write(STDOUT_FILENO, "\n", 1);
+            }
+        }
+    } else {
+        printf("[Background process started with PID %d]\n", last_pid);
     }
+
+    /* Restore original parent shell SIGINT handler */
+    sigaction(SIGINT, &sa_old, NULL);
 
     return 0;
 }
@@ -96,6 +129,19 @@ void shell_loop(void) {
     size_t bufsize = 0;
     ssize_t characters;
     pipeline_t pipe_cmd;
+
+    /* Configure POSIX signal handlers */
+    struct sigaction sa_chld, sa_int;
+
+    sa_chld.sa_handler = handle_sigchld;
+    sigemptyset(&sa_chld.sa_mask);
+    sa_chld.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+    sigaction(SIGCHLD, &sa_chld, NULL);
+
+    sa_int.sa_handler = handle_sigint;
+    sigemptyset(&sa_int.sa_mask);
+    sa_int.sa_flags = SA_RESTART;
+    sigaction(SIGINT, &sa_int, NULL);
 
     while (1) {
         if (isatty(STDIN_FILENO)) {
@@ -118,12 +164,10 @@ void shell_loop(void) {
             continue;
         }
 
-        /* If it is a single command and a builtin */
         if (pipe_cmd.num_cmds == 1 && exec_builtin(pipe_cmd.cmds[0].args)) {
             continue;
         }
 
-        /* Execute command pipeline */
         exec_pipeline(&pipe_cmd);
     }
 
