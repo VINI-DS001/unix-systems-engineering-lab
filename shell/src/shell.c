@@ -1,3 +1,12 @@
+/**
+ * @file shell.c
+ * @brief Core implementation of the Unix Mini Shell execution loop and process pipeline.
+ *
+ * Implements the Read-Eval-Print Loop (REPL), signal handlers for SIGCHLD and SIGINT,
+ * I/O redirection setup, and pipeline process orchestration via fork(), execvp(), 
+ * pipe(), and wait().
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,13 +19,27 @@
 #include "../include/builtins.h"
 #include "../include/parser.h"
 
-/* Signal handler for SIGCHLD: reap terminated children to avoid zombies */
+/**
+ * @brief Signal handler for SIGCHLD to reap terminated child processes.
+ *
+ * Uses waitpid() with WNOHANG in a non-blocking loop to clean up background
+ * processes immediately upon termination, preventing zombie processes.
+ *
+ * @param sig Signal number received (SIGCHLD).
+ */
 static void handle_sigchld(int sig) {
     (void)sig;
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-/* Signal handler for SIGINT (Ctrl+C) when the shell is idle at the prompt */
+/**
+ * @brief Signal handler for SIGINT (Ctrl+C) when the shell is idle at the prompt.
+ *
+ * Safely outputs a new line and re-renders the prompt using async-signal-safe
+ * write() call, preventing shell termination on interrupt.
+ *
+ * @param sig Signal number received (SIGINT).
+ */
 static void handle_sigint(int sig) {
     (void)sig;
     if (isatty(STDIN_FILENO)) {
@@ -24,6 +47,14 @@ static void handle_sigint(int sig) {
     }
 }
 
+/**
+ * @brief Configures input and output file redirections for a single command.
+ *
+ * Opens specified input/output files and replaces STDIN_FILENO or STDOUT_FILENO
+ * using dup2(). Executed inside child processes prior to calling execvp().
+ *
+ * @param cmd Pointer to command structure containing redirection specs.
+ */
 static void setup_redirections(command_t *cmd) {
     if (cmd->input_file != NULL) {
         int fd_in = open(cmd->input_file, O_RDONLY);
@@ -48,6 +79,16 @@ static void setup_redirections(command_t *cmd) {
     }
 }
 
+/**
+ * @brief Executes a pipeline of commands with support for IPC pipes, I/O redirections, and background execution.
+ *
+ * Creates inter-process communication pipes via pipe(), forks child processes,
+ * routes stdin/stdout descriptors, and enforces signal handling policies
+ * (ignoring SIGINT in parent during foreground execution).
+ *
+ * @param pipe_cmd Pointer to the parsed pipeline configuration structure.
+ * @return 0 on success, or -1 on system call failure.
+ */
 int exec_pipeline(pipeline_t *pipe_cmd) {
     int num_cmds = pipe_cmd->num_cmds;
     int pipefds[2 * (num_cmds - 1)];
@@ -124,6 +165,13 @@ int exec_pipeline(pipeline_t *pipe_cmd) {
     return 0;
 }
 
+/**
+ * @brief Starts and manages the main Read-Eval-Print Loop (REPL).
+ *
+ * Configures signal actions (SIGCHLD and SIGINT), displays prompt dynamically when
+ * connected to a TTY, reads user input via getline(), invokes tokenization, and routes
+ * execution to built-in handlers or process pipelines.
+ */
 void shell_loop(void) {
     char *line = NULL;
     size_t bufsize = 0;

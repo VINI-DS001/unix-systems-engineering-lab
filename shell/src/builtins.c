@@ -1,20 +1,34 @@
+/**
+ * @file builtins.c
+ * @brief Implementation of internal shell commands (cd, pwd, exit).
+ *
+ * Handles execution of commands that must run directly within the parent
+ * process context to affect shell state (such as directory changes).
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "../include/builtins.h"
 
+/**
+ * @brief Evaluates and executes built-in commands if matched.
+ *
+ * @param args Null-terminated array of arguments.
+ * @return 1 if command was handled as a built-in, 0 otherwise.
+ */
 int exec_builtin(char **args) {
     if (args[0] == NULL) {
         return 0;
     }
 
-    /* Builtin command: exit */
+    /* Built-in command: exit */
     if (strcmp(args[0], "exit") == 0) {
         exit(0);
     }
 
-    /* Builtin command: pwd */
+    /* Built-in command: pwd */
     if (strcmp(args[0], "pwd") == 0) {
         char cwd[1024];
         if (getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -25,7 +39,7 @@ int exec_builtin(char **args) {
         return 1;
     }
 
-    /* Builtin command: cd */
+    /* Built-in command: cd */
     if (strcmp(args[0], "cd") == 0) {
         if (args[1] == NULL) {
             char *home = getenv("HOME");
@@ -42,5 +56,5 @@ int exec_builtin(char **args) {
         return 1;
     }
 
-    return 0; /* Not a builtin */
+    return 0; /* Not a built-in */
 }
