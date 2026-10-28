@@ -3,7 +3,7 @@
  * @brief Entry point for the CPU Scheduler Simulator.
  *
  * Demonstrates FCFS, SJF, SRTF, Round Robin, and Priority scheduling algorithms
- * on a benchmark set of simulated processes.
+ * on a benchmark set of simulated processes. Supports loading workloads from text files.
  */
 
 #include <stdio.h>
@@ -15,6 +15,11 @@
 
 /**
  * @brief Loads default sample processes into the process list.
+ *
+ * Initializes a standard 5-process test workload with varying arrival times,
+ * burst times, and priorities to serve as a baseline benchmark.
+ *
+ * @param list Pointer to pre-allocated process_list_t structure.
  */
 static void load_sample_processes(process_list_t *list) {
     list->count = 5;
@@ -34,8 +39,14 @@ static void load_sample_processes(process_list_t *list) {
 }
 
 /**
- * @brief Loads processes from a plain text file.
- * Format expected per line: PID Arrival_Time Burst_Time Priority
+ * @brief Parses and loads process definitions from a plain text file.
+ *
+ * Reads formatted records line-by-line where each line specifies:
+ * `PID Arrival_Time Burst_Time Priority`.
+ *
+ * @param filename Path to the input dataset file.
+ * @param list Pointer to target process_list_t structure.
+ * @return 0 on success, or -1 if file opening fails.
  */
 static int load_processes_from_file(const char *filename, process_list_t *list) {
     FILE *fp = fopen(filename, "r");
@@ -63,6 +74,17 @@ static int load_processes_from_file(const char *filename, process_list_t *list) 
     return 0;
 }
 
+/**
+ * @brief Main execution function.
+ *
+ * Allocates process lists, loads process dataset, and sequentially invokes each
+ * scheduling algorithm (FCFS, SJF, SRTF, Round Robin, Priority Non-Preemptive, Priority Preemptive),
+ * outputting performance metrics and Gantt charts for each run.
+ *
+ * @param argc Command line argument count.
+ * @param argv Command line argument vector (optional argv[1] as input filename).
+ * @return EXIT_SUCCESS on successful completion, or EXIT_FAILURE on error.
+ */
 int main(int argc, char *argv[]) {
     printf("=======================================================\n");
     printf("        CPU SCHEDULER SIMULATOR (C17 / POSIX)         \n");

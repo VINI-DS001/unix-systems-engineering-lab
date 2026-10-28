@@ -1,4 +1,4 @@
-# POSIX Mini Shell (Module 1)
+# POSIX Mini Shell
 
 A C17, POSIX-compliant minimalist Unix shell implementation developed as part of a Systems Engineering Lab project. This project demonstrates core operating system concepts, including process lifecycle management, inter-process communication (IPC) via pipelines, file I/O redirection, and asynchronous signal handling.
 
@@ -145,4 +145,4 @@ minishell>
 
 1. **Tokenization Simplification:** `strtok()` handles space/tab delimiters but does not yet evaluate quoted strings containing literal spaces (e.g., `grep "hello world"`).
 2. **Environment Expansion:** Variables like `$PATH` or `$HOME` are expanded natively by `execvp()` or `getenv()`, but general shell variable expansion (`$VAR`) is not evaluated inside raw strings.
-3. **No Complex Control Operators:** Chained conditional execution (`&&`, `||`) and subshell groupings `()` are out of scope in this Module 1.
+3. **No Complex Control Operators:** Chained conditional execution (`&&`, `||`) and subshell groupings `()` are out of scope in this project.

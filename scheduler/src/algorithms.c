@@ -1,6 +1,9 @@
 /**
  * @file algorithms.c
  * @brief Implementation of CPU scheduling algorithms (FCFS, SJF, SRTF, RR, Priority).
+ *
+ * Implements discrete-event simulation algorithms for CPU process scheduling,
+ * generating dynamic execution traces and metrics for performance evaluation.
  */
 
 #include <stdio.h>
@@ -9,7 +12,17 @@
 #include "../include/scheduler.h"
 
 /**
- * @brief Adds an execution segment to the Gantt chart, merging continuous blocks.
+ * @brief Adds an execution segment to the Gantt chart, merging contiguous time slices.
+ *
+ * Appends execution blocks to the timeline buffer. If the current executing process
+ * matches the process in the previous segment, it extends the end time instead of
+ * adding a duplicate segment.
+ *
+ * @param gantt Array of gantt_segment_t tracking execution slices.
+ * @param gantt_size Pointer to current number of segments in gantt array.
+ * @param pid Process identifier executing during slice (-1 for CPU IDLE).
+ * @param start_time Start time unit of slice.
+ * @param end_time End time unit of slice.
  */
 static void add_gantt_segment(gantt_segment_t *gantt, int *gantt_size, int pid, int start_time, int end_time) {
     if (start_time == end_time) return;
@@ -25,9 +38,17 @@ static void add_gantt_segment(gantt_segment_t *gantt, int *gantt_size, int pid, 
     }
 }
 
-/* -------------------------------------------------------------------------
- * 1. FCFS (First-Come, First-Served) - Non-preemptive
- * ------------------------------------------------------------------------- */
+/**
+ * @brief First-Come, First-Served (FCFS) Scheduling Algorithm (Non-preemptive).
+ *
+ * Processes are sorted and dispatched strictly by arrival time. Once a process gains
+ * control of the CPU, it runs to completion without interruption.
+ *
+ * @param list Pointer to process workload list.
+ * @param gantt Output buffer array to store generated execution timeline segments.
+ * @param gantt_size Output pointer receiving total number of recorded Gantt segments.
+ * @param metrics Output pointer receiving calculated workload performance metrics.
+ */
 void run_fcfs(process_list_t *list, gantt_segment_t *gantt, int *gantt_size, metrics_t *metrics) {
     if (!list || list->count == 0) return;
 
@@ -82,9 +103,17 @@ void run_fcfs(process_list_t *list, gantt_segment_t *gantt, int *gantt_size, met
     calculate_metrics(list, metrics, current_time, idle_time);
 }
 
-/* -------------------------------------------------------------------------
- * 2. SJF (Shortest Job First) - Non-preemptive
- * ------------------------------------------------------------------------- */
+/**
+ * @brief Shortest Job First (SJF) Scheduling Algorithm (Non-preemptive).
+ *
+ * Among ready processes in the queue, selects the process with the shortest burst time.
+ * Executed processes run to completion before the CPU is re-allocated.
+ *
+ * @param list Pointer to process workload list.
+ * @param gantt Output buffer array to store generated execution timeline segments.
+ * @param gantt_size Output pointer receiving total number of recorded Gantt segments.
+ * @param metrics Output pointer receiving calculated workload performance metrics.
+ */
 void run_sjf(process_list_t *list, gantt_segment_t *gantt, int *gantt_size, metrics_t *metrics) {
     if (!list || list->count == 0) return;
 
@@ -131,9 +160,17 @@ void run_sjf(process_list_t *list, gantt_segment_t *gantt, int *gantt_size, metr
     calculate_metrics(list, metrics, current_time, idle_time);
 }
 
-/* -------------------------------------------------------------------------
- * 3. SRTF (Shortest Remaining Time First) - Preemptive
- * ------------------------------------------------------------------------- */
+/**
+ * @brief Shortest Remaining Time First (SRTF) Scheduling Algorithm (Preemptive SJF).
+ *
+ * Evaluates remaining burst time at each time step. Preempts the running process
+ * if a newly arrived process presents a strictly shorter remaining execution time.
+ *
+ * @param list Pointer to process workload list.
+ * @param gantt Output buffer array to store generated execution timeline segments.
+ * @param gantt_size Output pointer receiving total number of recorded Gantt segments.
+ * @param metrics Output pointer receiving calculated workload performance metrics.
+ */
 void run_srtf(process_list_t *list, gantt_segment_t *gantt, int *gantt_size, metrics_t *metrics) {
     if (!list || list->count == 0) return;
 
@@ -189,9 +226,18 @@ void run_srtf(process_list_t *list, gantt_segment_t *gantt, int *gantt_size, met
     calculate_metrics(list, metrics, current_time, idle_time);
 }
 
-/* -------------------------------------------------------------------------
- * 4. Round Robin (RR) - Preemptive by Quantum
- * ------------------------------------------------------------------------- */
+/**
+ * @brief Round Robin (RR) Scheduling Algorithm (Preemptive by Time Quantum).
+ *
+ * Implements a FIFO ready queue where processes execute for up to quantum units of time.
+ * If execution is incomplete after quantum expiration, the process returns to queue tail.
+ *
+ * @param list Pointer to process workload list.
+ * @param quantum Maximum continuous execution time slice allocated to each process.
+ * @param gantt Output buffer array to store generated execution timeline segments.
+ * @param gantt_size Output pointer receiving total number of recorded Gantt segments.
+ * @param metrics Output pointer receiving calculated workload performance metrics.
+ */
 void run_round_robin(process_list_t *list, int quantum, gantt_segment_t *gantt, int *gantt_size, metrics_t *metrics) {
     if (!list || list->count == 0 || quantum <= 0) return;
 
@@ -266,10 +312,18 @@ void run_round_robin(process_list_t *list, int quantum, gantt_segment_t *gantt, 
     calculate_metrics(list, metrics, current_time, idle_time);
 }
 
-/* -------------------------------------------------------------------------
- * 5. Priority Scheduling (Preemptive and Non-Preemptive)
- * Note: Lower numerical value indicates higher priority (e.g., 1 > 5).
- * ------------------------------------------------------------------------- */
+/**
+ * @brief Priority Scheduling Algorithm (Supports Preemptive and Non-preemptive modes).
+ *
+ * Dispatches ready processes according to assigned priority (lower numerical value
+ * represents higher priority level).
+ *
+ * @param list Pointer to process workload list.
+ * @param preemptive Flag (1 = Preemptive, 0 = Non-preemptive).
+ * @param gantt Output buffer array to store generated execution timeline segments.
+ * @param gantt_size Output pointer receiving total number of recorded Gantt segments.
+ * @param metrics Output pointer receiving calculated workload performance metrics.
+ */
 void run_priority(process_list_t *list, int preemptive, gantt_segment_t *gantt, int *gantt_size, metrics_t *metrics) {
     if (!list || list->count == 0) return;
 
