@@ -1,6 +1,10 @@
 /**
  * @file fs_inspector.c
  * @brief Implementation of inode and file status inspection routines using POSIX stat/lstat APIs.
+ *
+ * Demonstrates POSIX file management, Virtual File System (VFS) mechanisms, and directory entries.
+ * Creates temporary files, hard links, and soft/symbolic links to inspect and contrast their inode
+ * assignments, link count metrics, and file attributes using stat() and lstat().
  */
 
 #define _POSIX_C_SOURCE 200809L
@@ -12,6 +16,15 @@
 #include <fcntl.h>
 #include "../include/fs_inspector.h"
 
+/**
+ * @brief Executes the file system, inode tracking, and link analysis experiment.
+ *
+ * Creates a baseline file, attaches a hard link using link(), creates a symbolic link
+ * using symlink(), and queries file metadata using stat() for target/hard link and lstat()
+ * for the symbolic link to highlight low-level VFS inode behavior.
+ *
+ * @return 0 on successful demonstration, or -1 on file creation/stat error.
+ */
 int run_filesystem_demo(void) {
     printf("\n=======================================================\n");
     printf("   FILESYSTEM & INODE INSPECTION EXPERIMENT            \n");

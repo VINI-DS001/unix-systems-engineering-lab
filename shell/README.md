@@ -4,7 +4,7 @@ A C17, POSIX-compliant minimalist Unix shell implementation developed as part of
 
 ---
 
-## Technical Overview & Architecture
+## 1. Technical Overview & Architecture
 
 The shell operates on the standard **Read-Eval-Print Loop (REPL)** pattern:
 
@@ -25,7 +25,7 @@ The shell operates on the standard **Read-Eval-Print Loop (REPL)** pattern:
 
 ---
 
-## Key POSIX System Calls & API Usage
+## 2. Key POSIX System Calls & API Usage
 
 | System Call / API | Module / Context | Purpose |
 | :--- | :--- | :--- |
@@ -39,7 +39,7 @@ The shell operates on the standard **Read-Eval-Print Loop (REPL)** pattern:
 
 ---
 
-## Repository & File Structure
+## 3. Repository & File Structure
 
 ```text
 shell/
@@ -58,7 +58,7 @@ shell/
 
 ---
 
-## Compilation & Execution Instructions
+## 4. Compilation & Execution Instructions
 
 ### Prerequisites
 - GCC Compiler with C17 standard support.
@@ -86,7 +86,7 @@ make clean
 
 ---
 
-## Supported Features & Usage Examples
+## 5. Supported Features & Usage Examples
 
 ### 1. Built-in Commands
 ```bash
@@ -141,7 +141,7 @@ minishell>
 
 ---
 
-## Technical Limitations & Scope Constraints
+## 6. Technical Limitations & Scope Constraints
 
 1. **Tokenization Simplification:** `strtok()` handles space/tab delimiters but does not yet evaluate quoted strings containing literal spaces (e.g., `grep "hello world"`).
 2. **Environment Expansion:** Variables like `$PATH` or `$HOME` are expanded natively by `execvp()` or `getenv()`, but general shell variable expansion (`$VAR`) is not evaluated inside raw strings.

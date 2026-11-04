@@ -1,6 +1,10 @@
 /**
  * @file sys_info.c
  * @brief Implementation of Linux /proc virtual filesystem inspection functions.
+ *
+ * Implements routines for reading and parsing Linux kernel metrics directly from the /proc
+ * pseudo-filesystem, specifically extracting memory statistics from /proc/meminfo and
+ * CPU time accounting counters from /proc/stat.
  */
 
 #include <stdio.h>
@@ -8,6 +12,14 @@
 #include <string.h>
 #include "../include/sys_info.h"
 
+/**
+ * @brief Reads /proc/meminfo and populates the memory metrics structure.
+ *
+ * Parses total, free, available, buffered, and cached physical RAM statistics.
+ *
+ * @param info Pointer to sys_mem_info_t structure to store parsed metrics.
+ * @return 0 on success, or -1 on file open or parsing failure.
+ */
 int get_system_memory_info(sys_mem_info_t *info) {
     if (!info) return -1;
 
@@ -36,6 +48,14 @@ int get_system_memory_info(sys_mem_info_t *info) {
     return (parsed_count > 0) ? 0 : -1;
 }
 
+/**
+ * @brief Reads /proc/stat and captures current overall CPU tick counters.
+ *
+ * Extracts aggregate user, nice, system, idle, and iowait tick counts from the first line of /proc/stat.
+ *
+ * @param info Pointer to sys_cpu_info_t structure to store parsed metrics.
+ * @return 0 on success, or -1 on file open failure.
+ */
 int get_system_cpu_info(sys_cpu_info_t *info) {
     if (!info) return -1;
 
@@ -61,6 +81,12 @@ int get_system_cpu_info(sys_cpu_info_t *info) {
     return 0;
 }
 
+/**
+ * @brief Displays a formatted terminal dashboard showing system RAM and CPU utilization metrics.
+ *
+ * Queries get_system_memory_info() and get_system_cpu_info() to compute and display
+ * memory usage percentage and total CPU activity breakdown.
+ */
 void print_system_diagnostics(void) {
     sys_mem_info_t mem;
     sys_cpu_info_t cpu;

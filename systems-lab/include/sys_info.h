@@ -1,6 +1,10 @@
 /**
  * @file sys_info.h
  * @brief Interfaces for extracting system and kernel metrics from /proc virtual filesystem.
+ *
+ * Defines structures and parsing routines to query the Linux procfs (/proc).
+ * Extracts real-time memory metrics from /proc/meminfo and CPU execution tick metrics
+ * from /proc/stat to compute hardware resource utilization percentages.
  */
 
 #ifndef SYS_INFO_H
