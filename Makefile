@@ -26,6 +26,8 @@ test:
 	-$(MAKE) -C shell test
 	@echo "==> Running CPU Scheduler tests..."
 	-$(MAKE) -C scheduler test
+	@echo "==> Running Systems Lab tests..."
+	-$(MAKE) -C systems-lab test
 
 # Cleaning generated binaries and objects
 clean:
@@ -37,9 +39,10 @@ clean:
 # Help for Makefile commands
 help:
 	@echo "Available commands:"
-	@echo "  make all          - Compiles all modules"
-	@echo "  make shell        - Compiles only the Mini Shell"
-	@echo "  make scheduler    - Compiles only the CPU simulator"
-	@echo "  make systems-lab  - Compiles the Linux experiments"
-	@echo "  make test         - Runs automated tests"
-	@echo "  make clean        - Removes build artifacts"
+	@echo "  make all         - Compiles all modules"
+	@echo "  make shell       - Compiles only the Mini Shell"
+	@echo "  make scheduler   - Compiles only the CPU simulator"
+	@echo "  make systems-lab - Compiles the Linux experiments"
+	@echo "  make test        - Runs automated tests across all modules"
+	@echo "  make clean       - Removes build artifacts"
+	@echo "  make help        - Displays this help message"
